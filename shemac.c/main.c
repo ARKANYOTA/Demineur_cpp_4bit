@@ -33,17 +33,35 @@
 
 
 // Maps Vars
-unsigned long long int bombs = 0;
+unsigned long long int bombs = 0; // Warn: La position 0 se trouve en bas a droite (Sur la representation graphique)
 unsigned long long int flags = 0;
 unsigned long long int disco = 0;
 // Temp Vars
-unsigned long int vars  = 0;
-int pos = 0;
+unsigned long long int vars  = 0;
+// +-VARS----------------------------------------------------------------------------------------------------------------------------+ 
+// + 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 + 
+// +---------------------------------------------------------------------------------------------------------------------------------+ 
+//   ^-x-^ ^-y-^ ^-nb_bomb-^ ^---tmp---^                                                                                         | ^--- is lose
+//                                                                                                                               |     
+//                                                                                                                               ^----- is win
+//                                                                                                                                     
+//                                                                                                                                     
+//                                         |========================================|                                                  
+//                                         | Schema du stockage de la variable vars |                                                  
+//                                         |========================================|                                                  
+
+// Le Nombre de bombes je sais pas si on met 32 comme ça c'est sur on peut pas faire une boucle infinie dans le generate bombe, ou 64 le nombre de case
+
+int pos = 0;  // Position de quand on clique
+int tmp = 0;  // used for pos, 
+              //
+int x = 0;
+int y = 0;
 
 // On peut juste avoir pos au lieu de x et y:
 // Pour accéder au y - 1, on fait pos - 8
 // Pour accéder au y + 1, on fait pos + 8
-// Pour accéder au x - 1, on fait pos - 1
+// Pour accéder au x - 1, on fait pos - 1  // Meme si ça peut revenir a la ligne précédante si c'est en position modulo 8
 // Pour accéder au x + 1, on fait pos + 1
 // Pour vérifier si pos est dans la grille, 0 <= pos <= 0b111111  (63) ou
 //                                          0 <= pos <  0b1000000 (64)
@@ -59,20 +77,16 @@ int pos = 0;
 //  - Puis 
 //      => Maps_Vars = Maps_Vars | (new_bit ull << pos)
 //      
+// x & y to pos => return (y*8+x)
+
+void reset_map(){
+    bombs = 0;
+    flags = 0;
+    disco = 0;
+    return;
+}
 
 void generate_bombs(){
-    bombs = 0;
-    int nb_bombs = 16;  // TODO Le get par ull(vars)
-    while(nb_bombs > 0){
-        pos = rand() % 0b1000000; // 64 (Le nombre de case)
-        if(!((bombs >> pos) & 1)){  // Get bit: Ce n'est pas une bombe 
-            // On sait que le bit est null donc pas besoin de le reset
-            // Faut que le 1 soit un unsigned long long sinon sa marche pas, Il est possible que le problème arrive en assembleur
-            // https://stackoverflow.com/questions/7401888/why-doesnt-left-bit-shift-for-32-bit-integers-work-as-expected-when-used
-            bombs |= (1ull << pos);
-            nb_bombs--;
-        }
-    }
     return;
 }
 
@@ -82,11 +96,44 @@ int main(){
     srand((unsigned) time(&t));
     // A Commenter si tu veux faire plein de tests avec les mêmes valeurs
 
-    generate_bombs(bombs);
+    // GENERATE BOMBS
+    pos = 28;  // Get input(Pas Obligatoire On peu garder le pos)
+    int nb_bombs = 16;  // TODO Le get par ull(vars) 
+    while(nb_bombs > 0){
+        tmp = rand() % 0b1000000; // 64 (Le nombre de case)
+        if((!((bombs >> tmp) & 1)) && tmp != pos){  // Si on clique on peut être entourée de bombe, mais bon pas grave.
+            // Get bit: Ce n'est pas une bombe 
 
-    printf("Bombs   \n"PRINTF_BINARY_PATTERN_INT64 "\n", PRINTF_BYTE_TO_BINARY_INT64(bombs));
-    printf("Flags   \n"PRINTF_BINARY_PATTERN_INT64 "\n", PRINTF_BYTE_TO_BINARY_INT64(flags));
-    printf("Disco   \n"PRINTF_BINARY_PATTERN_INT64 "\n", PRINTF_BYTE_TO_BINARY_INT64(disco));
+            // On sait que le bit est null donc pas besoin de le reset
+            // Faut que le 1 soit un unsigned long long sinon sa marche pas, Il est possible que le problème arrive en assembleur
+            // https://stackoverflow.com/questions/7401888/why-doesnt-left-bit-shift-for-32-bit-integers-work-as-expected-when-used
+            bombs |= (1ull << tmp);
+            nb_bombs--;
+        }
+    }
+    // END GENERATE BOMBS
+    
+    while(1){
+        printf("Bombs   \n"PRINTF_BINARY_PATTERN_INT64 "\n", PRINTF_BYTE_TO_BINARY_INT64(bombs));
+        printf("Flags   \n"PRINTF_BINARY_PATTERN_INT64 "\n", PRINTF_BYTE_TO_BINARY_INT64(flags));
+        printf("Disco   \n"PRINTF_BINARY_PATTERN_INT64 "\n", PRINTF_BYTE_TO_BINARY_INT64(disco));
+
+
+        printf("Position x: ");
+        scanf("%d", &x);
+        printf("Position y: ");
+        scanf("%d", &y);
+
+        if((bombs >> y*8+x) & 1){
+            printf("Perdu Dommage\n");
+            exit(0);
+        }else{
+            disco |= (1ull << y*8+x);
+        }
+    //      - Cliquer sur la case
+    //      - Vérifier si c'est win ou lose
+    // 
+    }
 
     return 0;
 }
