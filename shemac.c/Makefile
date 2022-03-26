@@ -1,3 +1,6 @@
+all: clean compile execute
+
+
 clean:
 	rm -rf *.out
 
@@ -7,4 +10,6 @@ compile:
 execute:
 	./a.out
 
-all: clean compile execute
+
+asm:
+	nasm -felf64 main.asm && ld main.o && ./a.out

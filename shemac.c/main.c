@@ -41,14 +41,31 @@ unsigned long long int vars  = 0;
 // +-VARS----------------------------------------------------------------------------------------------------------------------------+ 
 // + 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 + 
 // +---------------------------------------------------------------------------------------------------------------------------------+ 
-//   ^-x-^ ^-y-^ ^-nb_bomb-^ ^---tmp---^                                                                                         | ^--- is lose
-//                                                                                                                               |     
+//                                                                                           ^-x-^ ^-y-^ ^-nb_bomb-^ ^---tmp---^ | ^--- is lose
 //                                                                                                                               ^----- is win
+//                                                                                                                                     
 //                                                                                                                                     
 //                                                                                                                                     
 //                                         |========================================|                                                  
 //                                         | Schema du stockage de la variable vars |                                                  
 //                                         |========================================|                                                  
+
+// get is lose => return ( vars       ) & 0b1
+// get is win  => return ( vars >> 1  ) & 0b1
+// get tmp     => return ( vars >> 2  ) & 0b111111 
+// get nb_bomb => return ( vars >> 8  ) & 0b111111
+// get x       => return ( vars >> 14 ) & 0b111
+// get y       => return ( vars >> 16 ) & 0b111
+
+
+// MArche pas::::::
+// set is lose => vars = ( vars       ) & 0b1
+// set is win  => vars = ( vars >> 1  ) & 0b1
+// set tmp     => vars = ( vars >> 2  ) & 0b111111 
+// set nb_bomb => vars = ( vars >> 8  ) & 0b111111
+// set x       => vars = ( vars >> 14 ) & 0b111
+// set y       => vars = ( vars >> 16 ) & 0b111
+
 
 // Le Nombre de bombes je sais pas si on met 32 comme ça c'est sur on peut pas faire une boucle infinie dans le generate bombe, ou 64 le nombre de case
 
@@ -114,9 +131,9 @@ int main(){
     // END GENERATE BOMBS
     
     while(1){
-        printf("Bombs   \n"PRINTF_BINARY_PATTERN_INT64 "\n", PRINTF_BYTE_TO_BINARY_INT64(bombs));
-        printf("Flags   \n"PRINTF_BINARY_PATTERN_INT64 "\n", PRINTF_BYTE_TO_BINARY_INT64(flags));
-        printf("Disco   \n"PRINTF_BINARY_PATTERN_INT64 "\n", PRINTF_BYTE_TO_BINARY_INT64(disco));
+        printf("Bombs   \n" PRINTF_BINARY_PATTERN_INT64 "\n", PRINTF_BYTE_TO_BINARY_INT64(bombs));
+        printf("Flags   \n" PRINTF_BINARY_PATTERN_INT64 "\n", PRINTF_BYTE_TO_BINARY_INT64(flags));
+        printf("Disco   \n" PRINTF_BINARY_PATTERN_INT64 "\n", PRINTF_BYTE_TO_BINARY_INT64(disco));
 
 
         printf("Position x: ");
