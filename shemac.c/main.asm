@@ -6,11 +6,11 @@ section .data                           ;Data segment
 	lenposxMsg equ $-posxMsg             ;The length of the message
 	posyMsg db 'Position y: '
 	lenposyMsg equ $-posyMsg             ;The length of the message
-	bombs DD 100
+	bombs DQ 0x0
 	Flags DQ 0
 	disco DQ 0
 	vars  DQ 0
-	nb_bombs DD 16
+	nb_bombs DQ 14
 	zero db "0"
 	uno  db "1"
 
@@ -22,46 +22,127 @@ section .text          ;Code Segment
 	global _start
 
 	
+randomnumgenerator:
 
-print_bin:                         ; Prend comme argument rax et affiche le nombre en binaire
-                                   ; Mais attention, il est print de gauche a droite, lsb à gauche et msb à droite
-	mov ecx, 2
-	mov rdx, 0
-	div ecx                    ; Divise rax par 2, met le reste dans edx et met le quotient dans eax
-	push rax 		   ; On met le quotient dans la pile, car il est effacé par print_1 ou print_0
-	cmp rdx, 1
-	je print_1                 ; Si le reste est 1, on appelle print_1 sinon print_0
-print_0:
-	call just_print_0
-	cmp rax, 1
-	je end_print_bin
-print_1:
-	call just_print_1
-end_print_bin:
-	pop rax                     ; On récupère le quotient
-	cmp rax, 0                  
-	jne print_bin               ; Si le quotient est egale a 0, on sort de la fonction
-	ret
+        ret
 
-just_print_0:
-	mov rax, 1
-	mov rdi, 1
-	mov rsi, zero 
-	mov rdx, 1
-	syscall
-	ret
 
-just_print_1:
-	mov rax, 1
-	mov rdi, 1
-	mov rsi, uno
-	mov rdx, 1
-	syscall
-	ret
+
+; ; On pourait uilise r ça c'est possiblement plus opti https://www.aldeid.com/wiki/X86-assembly/Instructions/shr
+; print_bin:                         ; Prend comme argument rax et affiche le nombre en binaire
+;                                    ; Mais attention, il est print de gauche a droite, lsb à gauche et msb à droite
+; 	mov ecx, 2
+; 	mov rdx, 0
+; 	div ecx                    ; Divise rax par 2, met le reste dans edx et met le quotient dans eax
+; 	push rax 		   ; On met le quotient dans la pile, car il est effacé par print_1 ou print_0
+; 	cmp rdx, 1
+; 	je print_1                 ; Si le reste est 1, on appelle print_1 sinon print_0
+; print_0:
+; 	call just_print_0
+; 	cmp rax, 1
+; 	je end_print_bin
+; print_1:
+; 	call just_print_1
+; end_print_bin:
+; 	pop rax                     ; On récupère le quotient
+; 	cmp rax, 0                  
+; 	jne print_bin               ; Si le quotient est egale a 0, on sort de la fonction
+; 	ret
+; 
+; just_print_0:
+; 	mov rax, 1
+; 	mov rdi, 1
+; 	mov rsi, zero 
+; 	mov rdx, 1
+; 	syscall
+; 	ret
+; 
+; just_print_1:
+; 	mov rax, 1
+; 	mov rdi, 1
+; 	mov rsi, uno
+; 	mov rdx, 1
+; 	syscall
+; 	ret
+
+v2_print_bin:   ; Variable = r8
+    mov rax, r8
+    shr rax, 1
+    mov r8, rax
+    jc print_1
+    print_0:
+        mov rax, 4
+        mov rbx, 1
+        mov rcx, zero 
+        mov rdx, 1
+        int 80h
+        jmp end_print
+    print_1:
+        mov rax, 4
+        mov rbx, 1
+        mov rcx, uno 
+        mov rdx, 1
+        int 80h
+    end_print:
+    cmp r8, 0
+    jne v2_print_bin
+    ret
+    
+
+generate_bombs:
+    dec rcx
+    ; rax = RANDOM 
+    L: rdrand ax    ; Générer un nombre aléatoire dans la variable eax 
+    jnc L           ; https://rosettacode.org/wiki/Random_number_generator_(device)#X86_Assembly
+    
+    ; rax = rax%64 
+    mov rdx, 0      ; Reset la variale
+    mov rbx, 64     ; modulo 64 le nombre
+    div rbx         ; 
+    mov rax, rdx    ; Met le modulo dans la variable rax
+
+    mov rdx, 0      ; Reset rdx pour la prochaine utilisation
+    mov rbx, 0
+
+; Condition de si la bombe est deja placée
+    ; push rcx
+    ; mov rcx, rax
+    ; 
+    ; mov rbx, r8
+    ; shr rbx, cl 
+    ; and rbx, 1
+    ; pop rcx
+    ; cmp rbx, 1
+    ; je generate_bombs
+    mov rbx, 1     ; Masque
+    push rcx      ; Sauvgarde rcx(Compteur nb_bombes)
+    mov rcx, rax    ; masque = (1 << rax(position random de la bombe))
+    shl rbx, cl     ; ↑
+    or r8, rbx    ; bombs |= masque
+    pop rcx       ; On reprend rcx en tant que nb_bombs
+    
+    cmp rcx, 0      ; Si y a plus de bombes a placer on quitter
+    jne generate_bombs
+    mov [bombs], r8
+    ret
+
+
+breakpoint:
+    ret
 
 _start:                ;User prompt
-	mov rax, 103
-	call print_bin                ; Affiche le nombre 103 en binaire
+    
+    mov rax, 0
+    mov rbx, 64        ; Permet de faire un modulo 64
+    mov rdx, 0 
+    mov r8, [bombs]
+    mov rcx, [nb_bombs]
+    call generate_bombs
+
+    
+
+	; mov r, [bombs]
+	call v2_print_bin                ; Affiche le nombre 103 en binaire
 
 	; exit(0)
 	mov     eax, 0x1              ; Set system_call
