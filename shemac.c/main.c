@@ -149,7 +149,7 @@ int main(){
         }
     //      - Cliquer sur la case
     //      - Vérifier si c'est win ou lose
-    // 
+    //
     }
 
     return 0;
